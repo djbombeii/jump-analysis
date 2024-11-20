@@ -35,6 +35,8 @@ if uploaded_file:
     frame_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     frame_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     fps = int(cap.get(cv2.CAP_PROP_FPS))
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))  
+    video_duration_minutes = total_frames / (fps * 60)
 
     # Temporary directory for frames
     frames_dir = tempfile.mkdtemp()
@@ -145,13 +147,16 @@ if uploaded_file:
             # Get current counts for this frame
             current_counts = jumps_by_frame[i]
             
-            # Add text overlays with adjusted positioning and style
-            font = cv2.FONT_HERSHEY_SIMPLEX
-            font_scale = 1.5
-            thickness = 3
-            color = (0, 255, 0)  # Green
+            # Calculate reps per minute based on current frame
+            current_time_minutes = (i / fps) / 60  # Convert current frame time to minutes
+            reps_per_minute = current_counts["total"] / current_time_minutes if current_time_minutes > 0 else 0
             
             def put_text_with_background(img, text, position):
+                font = cv2.FONT_HERSHEY_SIMPLEX
+                font_scale = 1.5
+                thickness = 3
+                color = (0, 255, 0)
+                
                 (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
                 cv2.rectangle(img, 
                             (position[0] - 10, position[1] - text_height - 10),
@@ -164,6 +169,7 @@ if uploaded_file:
             put_text_with_background(frame, f'Big Jumps: {current_counts["big"]}', (50, 50))
             put_text_with_background(frame, f'Pogos: {current_counts["small"]}', (50, 100))
             put_text_with_background(frame, f'Total Jumps: {current_counts["total"]}', (50, 150))
+            put_text_with_background(frame, f'Reps/min: {reps_per_minute:.1f}', (50, 200))
 
             # Save the frame with overlays
             cv2.imwrite(frame_path, frame)
